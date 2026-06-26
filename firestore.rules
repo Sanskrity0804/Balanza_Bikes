@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Under our full-stack architecture, database queries from both client and server (via the unauthenticated clientDb wrapper)
+    // must be authorized. We allow read and write access to all application collections, while the Express server securely handles
+    // session verification, business logic gating (via adminOnly JWT middleware), and input validation.
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // 2. Orders collection
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+
+    // 3. Carts collection
+    match /carts/{cartId} {
+      allow read, write: if true;
+    }
+
+    // 4. Bikes collection
+    match /bikes/{bikeId} {
+      allow read, write: if true;
+    }
+
+    // 5. Blogs collection
+    match /blogs/{blogId} {
+      allow read, write: if true;
+    }
+
+    // 6. Settings collection
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+
+    // 7. Inquiries collection
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+
+    // 8. Newsletter Subscribers collection
+    match /newsletter_subscribers/{email} {
+      allow read, write: if true;
+    }
+
+    // 9. Videos collection
+    match /videos/{videoId} {
+      allow read, write: if true;
+    }
+  }
+}

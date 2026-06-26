@@ -1,0 +1,8 @@
+{
+  "name": "Balanza Bikes",
+  "description": "Premium balance bikes designed to help children develop coordination, balance, and confidence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
