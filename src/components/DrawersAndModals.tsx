@@ -1,6 +1,6 @@
 // import React, { useState } from 'react';
 // import { motion, AnimatePresence } from 'motion/react';
-// import { X, Trash2, Plus, Minus, Search, Sparkles, Check, CheckCircle, ChevronDown, Instagram, Facebook, Send, Twitter } from 'lucide-react';
+// import { X, Trash2, Plus, Minus, Search, Sparkles, Check, CheckCircle, ChevronDown, Instagram, Facebook, Youtube, Twitter } from 'lucide-react';
 // import { useApp } from '../context/AppContext';
 // import BalanzaLogo from './BalanzaLogo';
 // import BalanzaBagIcon from './BalanzaBagIcon';
@@ -119,7 +119,8 @@
 //       }, 1000);
 //       return;
 //     }
-//     setShowPaymentGateway(true);
+//     setCartOpen(false);
+//     setActivePage('checkout');
 //   };
 
 //   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -680,7 +681,7 @@
 //               {/* Bottom Section: Grey Social circles matching screenshot */}
 //               <div className="flex items-center gap-3.5 pt-6 border-t border-slate-50 mt-8">
 //                 <a 
-//                   href="https://instagram.com" 
+//                   href="https://www.instagram.com/balanzabikes?igsh=NjB4dnl1eWszcW5o&utm_source=qr" 
 //                   target="_blank" 
 //                   rel="noopener noreferrer"
 //                   className="h-11 w-11 rounded-full bg-slate-100 hover:bg-[#BFEC53] text-slate-700 hover:text-[#111] flex items-center justify-center transition-all cursor-pointer"
@@ -767,13 +768,13 @@
 //                         key={tab}
 //                         type="button"
 //                         onClick={() => { setActivePaymentTab(tab); setCheckoutError(''); }}
-//                         className={`py-2 text-[8px] font-black uppercase rounded-lg tracking-wider transition-all cursor-pointer ${
+//                         className={`py-2.5 text-[10px] sm:text-xs font-bold uppercase rounded-lg tracking-wider transition-all cursor-pointer ${
 //                           activePaymentTab === tab
 //                             ? 'bg-white text-slate-900 shadow-3xs'
 //                             : 'text-slate-550 hover:text-slate-800'
 //                         }`}
 //                       >
-//                         {tab === 'razorpay' ? '⚡ Razor' : tab === 'card' ? '💳 Card' : tab === 'upi' ? '📱 UPI' : '🏦 Bank'}
+//                         {tab === 'razorpay' ? '⚡ Razorpay' : tab === 'card' ? '💳 Card' : tab === 'upi' ? '📱 UPI' : '🏦 Bank'}
 //                       </button>
 //                     ))}
 //                   </div>
@@ -1365,7 +1366,7 @@
 //                       const color = selectedQuickView.colors[quickViewColorIdx] || selectedQuickView.colors[0];
 //                       addToCart(selectedQuickView, color);
 //                       setSelectedQuickView(null);
-//                       setCartOpen(true);
+//                       setActivePage('checkout');
 //                     }}
 //                     className="w-full text-center rounded-xl bg-[#A7E22E] hover:bg-[#99cf28] text-slate-950 py-3.5 text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:shadow active:scale-98 cursor-pointer"
 //                   >
@@ -1548,7 +1549,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Trash2, Plus, Minus, Search, Sparkles, Check, CheckCircle, ChevronDown, Instagram, Facebook, Send, Twitter } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Search, Sparkles, Check, CheckCircle, ChevronDown, Instagram, Facebook, Youtube, Twitter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import BalanzaLogo from './BalanzaLogo';
 import BalanzaBagIcon from './BalanzaBagIcon';
@@ -2229,7 +2230,7 @@ export default function DrawersAndModals() {
               {/* Bottom Section: Grey Social circles matching screenshot */}
               <div className="flex items-center gap-3.5 pt-6 border-t border-slate-50 mt-8">
                 <a 
-                  href="https://instagram.com" 
+                  href="https://www.instagram.com/balanzabikes?igsh=NjB4dnl1eWszcW5o&utm_source=qr" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="h-11 w-11 rounded-full bg-slate-100 hover:bg-[#BFEC53] text-slate-700 hover:text-[#111] flex items-center justify-center transition-all cursor-pointer"
@@ -2256,13 +2257,13 @@ export default function DrawersAndModals() {
                   <Twitter className="h-5 w-5" />
                 </a>
                 <a 
-                  href="https://telegram.org" 
+                  href="https://youtube.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="h-11 w-11 rounded-full bg-slate-100 hover:bg-[#BFEC53] text-slate-700 hover:text-[#111] flex items-center justify-center transition-all cursor-pointer"
-                  title="Telegram"
+                  title="YouTube"
                 >
-                  <Send className="h-4.5 w-4.5" />
+                  <Youtube className="h-5 w-5" />
                 </a>
               </div>
             </div>
@@ -3093,3 +3094,4 @@ export default function DrawersAndModals() {
     </>
   );
 }
+
