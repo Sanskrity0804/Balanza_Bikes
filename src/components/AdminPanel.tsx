@@ -556,6 +556,42 @@
 //     setEditingBike({ ...editingBike, images });
 //   };
 
+//   const compressImage = (base64Str: string, maxWidth = 1000, quality = 0.7): Promise<string> => {
+//     return new Promise((resolve) => {
+//       const img = new Image();
+//       img.src = base64Str;
+//       img.onload = () => {
+//         const canvas = document.createElement('canvas');
+//         let width = img.width;
+//         let height = img.height;
+
+//         // Keep it highly optimized (~30-60KB)
+//         if (width > maxWidth) {
+//           height = Math.round((height * maxWidth) / width);
+//           width = maxWidth;
+//         }
+
+//         canvas.width = width;
+//         canvas.height = height;
+
+//         const ctx = canvas.getContext('2d');
+//         if (!ctx) {
+//           resolve(base64Str);
+//           return;
+//         }
+
+//         ctx.drawImage(img, 0, 0, width, height);
+//         const compressed = canvas.toDataURL('image/jpeg', quality);
+//         resolve(compressed);
+//       };
+//       img.onerror = () => {
+//         resolve(base64Str);
+//       };
+//     });
+//   };
+
+//   const [saveToCloudDb, setSaveToCloudDb] = useState(true);
+
 //   const handleDeviceImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'bike' | 'blog' | 'color' | 'hero-0' | 'hero-1' | 'hero-2') => {
 //     const file = e.target.files?.[0];
 //     if (!file) return;
@@ -565,17 +601,45 @@
 //       return;
 //     }
 
-//     if (file.size > 2 * 1024 * 1024) {
-//       alert('This image is larger than 2MB. Please select a smaller, optimized image.');
+//     if (file.size > 8 * 1024 * 1024) {
+//       alert('This image is larger than 8MB. Please select a smaller image.');
 //       return;
 //     }
 
 //     const reader = new FileReader();
 //     reader.onload = async (event) => {
-//       const base64Data = event.target?.result as string;
-//       if (!base64Data) return;
+//       const rawBase64 = event.target?.result as string;
+//       if (!rawBase64) return;
 
 //       try {
+//         // Compress image to ultra-light format before saving/uploading (typically ~35KB)
+//         const base64Data = await compressImage(rawBase64, 1000, 0.7);
+
+//         // If user wants directly stored in Cloud Database (recommended for ephemeral environments)
+//         if (saveToCloudDb) {
+//           console.log("[AdminPanel] Writing compressed image directly to Cloud DB database as permanent base64 string...");
+//           if (target === 'bike') {
+//             handleAddDirectImage(base64Data);
+//             showFeedback('Image compressed & saved directly in Cloud DB safely!');
+//           } else if (target === 'blog') {
+//             if (editingBlog) {
+//               setEditingBlog({ ...editingBlog, imageUrl: base64Data });
+//               showFeedback('Blog backdrop compressed & saved directly in Cloud DB!');
+//             }
+//           } else if (target === 'color') {
+//             setColorInput({ ...colorInput, imageUrl: base64Data });
+//             showFeedback('Custom color compressed & saved directly in Cloud DB!');
+//           } else if (target.startsWith('hero-')) {
+//             const idx = parseInt(target.split('-')[1], 10);
+//             const newImgs = [...(localSettings?.heroImages || [])];
+//             newImgs[idx] = base64Data;
+//             setLocalSettings({ ...localSettings, heroImages: newImgs });
+//             showFeedback(`Hero Slide ${idx + 1} compressed & saved in Cloud DB!`);
+//           }
+//           return;
+//         }
+
+//         // Otherwise try folder upload
 //         const adminToken = localStorage.getItem("balanza_admin_jwt");
 //         const uploadRes = await fetch("/api/upload", {
 //           method: "POST",
@@ -613,23 +677,25 @@
 //         }
 //       } catch (err) {
 //         console.warn("Server uploads bypassed. Rendering raw base64 locally: ", err);
+//         // Fallback to compressed base64Data!
+//         const base64Data = await compressImage(rawBase64, 1000, 0.7);
 //         if (target === 'bike') {
 //           handleAddDirectImage(base64Data);
-//           showFeedback('Image successfully loaded from your device!');
+//           showFeedback('Saved directly in database as backup!');
 //         } else if (target === 'blog') {
 //           if (editingBlog) {
 //             setEditingBlog({ ...editingBlog, imageUrl: base64Data });
-//             showFeedback('Blog backdrop image matched from device!');
+//             showFeedback('Blog backdrop saved directly in database as backup!');
 //           }
 //         } else if (target === 'color') {
 //           setColorInput({ ...colorInput, imageUrl: base64Data });
-//           showFeedback('Custom color illustration loaded from device!');
+//           showFeedback('Custom color saved directly in database as backup!');
 //         } else if (target.startsWith('hero-')) {
 //           const idx = parseInt(target.split('-')[1], 10);
 //           const newImgs = [...(localSettings?.heroImages || [])];
 //           newImgs[idx] = base64Data;
 //           setLocalSettings({ ...localSettings, heroImages: newImgs });
-//           showFeedback(`Hero Slide ${idx + 1} image loaded from device!`);
+//           showFeedback(`Hero Slide ${idx + 1} saved in database as backup!`);
 //         }
 //       }
 //     };
@@ -884,6 +950,31 @@
 //                   <span className="truncate">Showcase Videos</span>
 //                   <span className="ml-auto text-[9px] bg-[#A7E22E]/10 border border-[#A7E22E]/25 text-[#A7E22E] px-1.5 py-0.5 rounded-md font-extrabold">{videos.length}</span>
 //                 </button>
+//               </div>
+
+//               {/* Cloud DB Image Persistence Toggle widget */}
+//               <div className="mt-auto pt-4 border-t border-slate-800/60 hidden sm:block">
+//                 <div className="p-3 bg-slate-900/40 border border-slate-800/50 rounded-xl space-y-2">
+//                   <div className="flex items-center justify-between">
+//                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cloud DB Mode</span>
+//                     <button
+//                       type="button"
+//                       onClick={() => setSaveToCloudDb(!saveToCloudDb)}
+//                       className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+//                         saveToCloudDb ? 'bg-[#A7E22E]' : 'bg-slate-700'
+//                       }`}
+//                     >
+//                       <span
+//                         className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+//                           saveToCloudDb ? 'translate-x-4' : 'translate-x-0'
+//                         }`}
+//                       />
+//                     </button>
+//                   </div>
+//                   <p className="text-[9px] text-slate-400 font-sans leading-relaxed">
+//                     Compresses and saves images in Firestore. Highly recommended for <strong>Hostinger, Vercel, and Render</strong> so images are 100% persistent forever!
+//                   </p>
+//                 </div>
 //               </div>
 //             </div>
 
@@ -3927,6 +4018,45 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
                             ))}
                           </div>
 
+                          {/* Extended Customer & Delivery Details */}
+                          {order.customerDetails && (
+                            <div className="mb-3 p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-2 select-text text-[10.5px]">
+                              <p className="font-sans font-black text-[9px] text-[#5F6D50] uppercase tracking-wider pb-1.5 border-b border-slate-100 flex items-center gap-1">
+                                <span>👤</span> Customer &amp; Shipment Delivery Information
+                              </p>
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-650">
+                                <div>
+                                  <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Contact Profile</p>
+                                  <p className="font-bold text-slate-800">{order.customerDetails.fullName}</p>
+                                  <p className="text-slate-550">{order.customerDetails.email}</p>
+                                  <p className="font-mono text-slate-550 font-semibold">{order.customerDetails.mobile}</p>
+                                </div>
+                                <div>
+                                  <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Shipping Destination</p>
+                                  <p className="font-semibold text-slate-700 leading-tight">
+                                    {order.shippingAddress?.houseFlat}, {order.shippingAddress?.streetArea},<br />
+                                    {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}, {order.shippingAddress?.country || 'India'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {order.billingAddress && (
+                                <div className="pt-2 border-t border-dashed border-slate-150 text-slate-650">
+                                  <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Billing Address</p>
+                                  {order.billingAddress.sameAsShipping ? (
+                                    <p className="text-slate-400 italic">Same as Shipping Address</p>
+                                  ) : (
+                                    <p className="font-semibold text-slate-700 leading-tight">
+                                      {order.billingAddress.houseFlat}, {order.billingAddress.streetArea},<br />
+                                      {order.billingAddress.city}, {order.billingAddress.state} - {order.billingAddress.pincode}, {order.billingAddress.country || 'India'}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="font-sans text-[10px] text-slate-400 leading-snug">
                               <p>Buyer UID: <span className="font-mono text-slate-550 break-all select-all font-semibold">{order.userId}</span></p>
@@ -4446,10 +4576,10 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
                         </h4>
                       </div>
 
-                      <div className="space-y-3">
+                      <div className="space-y-4 sm:space-y-3">
                         {[0, 1, 2].map((idx) => (
-                          <div key={idx} className="flex gap-3 items-center">
-                            <span className="text-[10px] font-extrabold text-slate-400 font-sans w-16 uppercase">
+                          <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center pb-3 border-b border-slate-100 sm:border-0 sm:pb-0 last:border-0 last:pb-0">
+                            <span className="text-[10px] font-extrabold text-slate-400 font-sans sm:w-16 uppercase">
                               Slide {idx + 1}
                             </span>
                             <div className="flex-grow flex gap-1.5 items-center">
@@ -4476,7 +4606,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
                               </label>
                             </div>
                             {localSettings.heroImages?.[idx] && (
-                              <div className="h-8 w-8 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-0.5">
+                              <div className="h-8 w-8 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-0.5 self-end sm:self-auto">
                                 <img
                                   src={localSettings.heroImages[idx]}
                                   alt="Preview"

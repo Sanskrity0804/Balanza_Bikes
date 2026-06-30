@@ -761,8 +761,8 @@
 //                   </div>
 
 //                   {/* Payment Tabs Selection */}
-//                   <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl mb-5 font-sans">
-//                     {(['razorpay', 'card', 'upi', 'netbanking'] as const).map((tab) => (
+//                   <div className="grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl mb-5 font-sans">
+//                     {(['razorpay'] as const).map((tab) => (
 //                       <button
 //                         key={tab}
 //                         type="button"
@@ -770,7 +770,7 @@
 //                         className={`py-2 text-[8px] font-black uppercase rounded-lg tracking-wider transition-all cursor-pointer ${
 //                           activePaymentTab === tab
 //                             ? 'bg-white text-slate-900 shadow-3xs'
-//                             : 'text-slate-505 hover:text-slate-800'
+//                             : 'text-slate-550 hover:text-slate-800'
 //                         }`}
 //                       >
 //                         {tab === 'razorpay' ? '⚡ Razor' : tab === 'card' ? '💳 Card' : tab === 'upi' ? '📱 UPI' : '🏦 Bank'}
@@ -1667,7 +1667,8 @@ export default function DrawersAndModals() {
       }, 1000);
       return;
     }
-    setShowPaymentGateway(true);
+    setCartOpen(false);
+    setActivePage('checkout');
   };
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2315,13 +2316,13 @@ export default function DrawersAndModals() {
                         key={tab}
                         type="button"
                         onClick={() => { setActivePaymentTab(tab); setCheckoutError(''); }}
-                        className={`py-2 text-[8px] font-black uppercase rounded-lg tracking-wider transition-all cursor-pointer ${
+                        className={`py-2.5 text-[10px] sm:text-xs font-bold uppercase rounded-lg tracking-wider transition-all cursor-pointer ${
                           activePaymentTab === tab
                             ? 'bg-white text-slate-900 shadow-3xs'
                             : 'text-slate-550 hover:text-slate-800'
                         }`}
                       >
-                        {tab === 'razorpay' ? '⚡ Razor' : tab === 'card' ? '💳 Card' : tab === 'upi' ? '📱 UPI' : '🏦 Bank'}
+                        {tab === 'razorpay' ? '⚡ Razorpay' : tab === 'card' ? '💳 Card' : tab === 'upi' ? '📱 UPI' : '🏦 Bank'}
                       </button>
                     ))}
                   </div>
@@ -2913,7 +2914,7 @@ export default function DrawersAndModals() {
                       const color = selectedQuickView.colors[quickViewColorIdx] || selectedQuickView.colors[0];
                       addToCart(selectedQuickView, color);
                       setSelectedQuickView(null);
-                      setCartOpen(true);
+                      setActivePage('checkout');
                     }}
                     className="w-full text-center rounded-xl bg-[#A7E22E] hover:bg-[#99cf28] text-slate-950 py-3.5 text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:shadow active:scale-98 cursor-pointer"
                   >
