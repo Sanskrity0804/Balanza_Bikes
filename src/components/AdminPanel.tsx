@@ -1452,6 +1452,45 @@
 //                             ))}
 //                           </div>
 
+//                           {/* Extended Customer & Delivery Details */}
+//                           {order.customerDetails && (
+//                             <div className="mb-3 p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-2 select-text text-[10.5px]">
+//                               <p className="font-sans font-black text-[9px] text-[#5F6D50] uppercase tracking-wider pb-1.5 border-b border-slate-100 flex items-center gap-1">
+//                                 <span>👤</span> Customer &amp; Shipment Delivery Information
+//                               </p>
+                              
+//                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-650">
+//                                 <div>
+//                                   <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Contact Profile</p>
+//                                   <p className="font-bold text-slate-800">{order.customerDetails.fullName}</p>
+//                                   <p className="text-slate-550">{order.customerDetails.email}</p>
+//                                   <p className="font-mono text-slate-550 font-semibold">{order.customerDetails.mobile}</p>
+//                                 </div>
+//                                 <div>
+//                                   <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Shipping Destination</p>
+//                                   <p className="font-semibold text-slate-700 leading-tight">
+//                                     {order.shippingAddress?.houseFlat}, {order.shippingAddress?.streetArea},<br />
+//                                     {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}, {order.shippingAddress?.country || 'India'}
+//                                   </p>
+//                                 </div>
+//                               </div>
+
+//                               {order.billingAddress && (
+//                                 <div className="pt-2 border-t border-dashed border-slate-150 text-slate-650">
+//                                   <p className="font-sans font-bold text-[8.5px] text-slate-400 uppercase tracking-wide mb-0.5">Billing Address</p>
+//                                   {order.billingAddress.sameAsShipping ? (
+//                                     <p className="text-slate-400 italic">Same as Shipping Address</p>
+//                                   ) : (
+//                                     <p className="font-semibold text-slate-700 leading-tight">
+//                                       {order.billingAddress.houseFlat}, {order.billingAddress.streetArea},<br />
+//                                       {order.billingAddress.city}, {order.billingAddress.state} - {order.billingAddress.pincode}, {order.billingAddress.country || 'India'}
+//                                     </p>
+//                                   )}
+//                                 </div>
+//                               )}
+//                             </div>
+//                           )}
+
 //                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 //                             <div className="font-sans text-[10px] text-slate-400 leading-snug">
 //                               <p>Buyer UID: <span className="font-mono text-slate-550 break-all select-all font-semibold">{order.userId}</span></p>
@@ -1971,10 +2010,10 @@
 //                         </h4>
 //                       </div>
 
-//                       <div className="space-y-3">
+//                       <div className="space-y-4 sm:space-y-3">
 //                         {[0, 1, 2].map((idx) => (
-//                           <div key={idx} className="flex gap-3 items-center">
-//                             <span className="text-[10px] font-extrabold text-slate-400 font-sans w-16 uppercase">
+//                           <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center pb-3 border-b border-slate-100 sm:border-0 sm:pb-0 last:border-0 last:pb-0">
+//                             <span className="text-[10px] font-extrabold text-slate-400 font-sans sm:w-16 uppercase">
 //                               Slide {idx + 1}
 //                             </span>
 //                             <div className="flex-grow flex gap-1.5 items-center">
@@ -2001,7 +2040,7 @@
 //                               </label>
 //                             </div>
 //                             {localSettings.heroImages?.[idx] && (
-//                               <div className="h-8 w-8 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-0.5">
+//                               <div className="h-8 w-8 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-0.5 self-end sm:self-auto">
 //                                 <img
 //                                   src={localSettings.heroImages[idx]}
 //                                   alt="Preview"
@@ -2563,7 +2602,6 @@
 //   );
 // }
 
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Plus, Edit2, Trash2, Calendar, ShoppingBag, 
@@ -3090,11 +3128,19 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       updatedImages.push(colorInput.imageUrl);
     }
 
-    setEditingBike({
+    const bikeToSave = {
       ...editingBike,
       colors: updatedColors,
       images: updatedImages
-    });
+    };
+
+    setEditingBike(bikeToSave);
+
+    // If it's an existing bike, auto-save to database immediately!
+    const isExisting = bikes.some(b => b.id === bikeToSave.id);
+    if (isExisting) {
+      updateBike(bikeToSave as BikeProduct);
+    }
 
     // Reset color input fields
     setColorInput({ name: '', value: '#a2e6b1', imageUrl: DEFAULT_BIKE_IMAGES[0] });
@@ -3113,19 +3159,30 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
     setEditingBike({ ...editingBike, images });
   };
 
-  const handleAddDirectImage = (imgUrl: string) => {
+  const handleAddDirectImage = async (imgUrl: string) => {
     if (!editingBike) return;
     const images = [...(editingBike.images || [])];
     if (!images.includes(imgUrl)) {
       images.push(imgUrl);
     }
-    setEditingBike({ ...editingBike, images });
+    const updatedBike = { ...editingBike, images };
+    setEditingBike(updatedBike);
+
+    // If it's an existing bike, auto-save to database immediately!
+    const isExisting = bikes.some(b => b.id === updatedBike.id);
+    if (isExisting) {
+      try {
+        await updateBike(updatedBike as BikeProduct);
+        showFeedback('✅ Image added and updated on website!');
+      } catch (err) {
+        console.error('Failed to auto-save bike image:', err);
+      }
+    }
   };
 
   const compressImage = (base64Str: string, maxWidth = 1000, quality = 0.7): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
-      img.src = base64Str;
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -3146,6 +3203,10 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
           return;
         }
 
+        // Fill background with solid white to prevent transparent PNGs from having black backgrounds in JPEG format
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
         ctx.drawImage(img, 0, 0, width, height);
         const compressed = canvas.toDataURL('image/jpeg', quality);
         resolve(compressed);
@@ -3153,10 +3214,12 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       img.onerror = () => {
         resolve(base64Str);
       };
+      img.src = base64Str;
     });
   };
 
   const [saveToCloudDb, setSaveToCloudDb] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleDeviceImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'bike' | 'blog' | 'color' | 'hero-0' | 'hero-1' | 'hero-2') => {
     const file = e.target.files?.[0];
@@ -3172,10 +3235,16 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       return;
     }
 
+    setIsUploadingImage(true);
+    showFeedback('⏳ Reading and compressing image from device...');
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const rawBase64 = event.target?.result as string;
-      if (!rawBase64) return;
+      if (!rawBase64) {
+        setIsUploadingImage(false);
+        return;
+      }
 
       try {
         // Compress image to ultra-light format before saving/uploading (typically ~35KB)
@@ -3185,23 +3254,36 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         if (saveToCloudDb) {
           console.log("[AdminPanel] Writing compressed image directly to Cloud DB database as permanent base64 string...");
           if (target === 'bike') {
-            handleAddDirectImage(base64Data);
-            showFeedback('Image compressed & saved directly in Cloud DB safely!');
+            await handleAddDirectImage(base64Data);
+            showFeedback('✅ Image compressed & saved directly in Cloud DB safely!');
           } else if (target === 'blog') {
             if (editingBlog) {
-              setEditingBlog({ ...editingBlog, imageUrl: base64Data });
-              showFeedback('Blog backdrop compressed & saved directly in Cloud DB!');
+              const updatedBlog = { ...editingBlog, imageUrl: base64Data };
+              setEditingBlog(updatedBlog);
+              
+              // Auto-save blog if editing an existing one
+              const isExisting = blogs.some(b => b.id === updatedBlog.id);
+              if (isExisting) {
+                await updateBlog(updatedBlog as BlogPost);
+              }
+              showFeedback('✅ Blog backdrop compressed & saved directly in Cloud DB!');
             }
           } else if (target === 'color') {
             setColorInput({ ...colorInput, imageUrl: base64Data });
-            showFeedback('Custom color compressed & saved directly in Cloud DB!');
+            showFeedback('✅ Custom color compressed & saved directly in Cloud DB!');
           } else if (target.startsWith('hero-')) {
             const idx = parseInt(target.split('-')[1], 10);
-            const newImgs = [...(localSettings?.heroImages || [])];
+            const currentSettings = localSettings || uiSettings;
+            const newImgs = [...(currentSettings?.heroImages || [])];
             newImgs[idx] = base64Data;
-            setLocalSettings({ ...localSettings, heroImages: newImgs });
-            showFeedback(`Hero Slide ${idx + 1} compressed & saved in Cloud DB!`);
+            const updatedSettings = { ...currentSettings, heroImages: newImgs };
+            setLocalSettings(updatedSettings);
+            
+            // Save to database immediately so it reflects on the website instantly!
+            await updateUISettings(updatedSettings);
+            showFeedback(`✅ Hero Slide ${idx + 1} updated and published live!`);
           }
+          setIsUploadingImage(false);
           return;
         }
 
@@ -3224,49 +3306,77 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         const serverAssetUrl = uploadData.url;
 
         if (target === 'bike') {
-          handleAddDirectImage(serverAssetUrl);
-          showFeedback('Image successfully saved to secure server uploads storage!');
+          await handleAddDirectImage(serverAssetUrl);
+          showFeedback('✅ Image successfully saved and updated on website!');
         } else if (target === 'blog') {
           if (editingBlog) {
-            setEditingBlog({ ...editingBlog, imageUrl: serverAssetUrl });
-            showFeedback('Blog backdrop image uploaded to secure server folders!');
+            const updatedBlog = { ...editingBlog, imageUrl: serverAssetUrl };
+            setEditingBlog(updatedBlog);
+            
+            // Auto-save blog if editing an existing one
+            const isExisting = blogs.some(b => b.id === updatedBlog.id);
+            if (isExisting) {
+              await updateBlog(updatedBlog as BlogPost);
+            }
+            showFeedback('✅ Blog backdrop image uploaded and saved!');
           }
         } else if (target === 'color') {
           setColorInput({ ...colorInput, imageUrl: serverAssetUrl });
-          showFeedback('Custom color illustration saved to server disk!');
+          showFeedback('✅ Custom color illustration saved to server disk!');
         } else if (target.startsWith('hero-')) {
           const idx = parseInt(target.split('-')[1], 10);
-          const newImgs = [...(localSettings?.heroImages || [])];
+          const currentSettings = localSettings || uiSettings;
+          const newImgs = [...(currentSettings?.heroImages || [])];
           newImgs[idx] = serverAssetUrl;
-          setLocalSettings({ ...localSettings, heroImages: newImgs });
-          showFeedback(`Hero Slide ${idx + 1} image uploaded to secure server folders!`);
+          const updatedSettings = { ...currentSettings, heroImages: newImgs };
+          setLocalSettings(updatedSettings);
+          
+          // Save to database immediately so it reflects on the website instantly!
+          await updateUISettings(updatedSettings);
+          showFeedback(`✅ Hero Slide ${idx + 1} image uploaded and published live!`);
         }
       } catch (err) {
         console.warn("Server uploads bypassed. Rendering raw base64 locally: ", err);
         // Fallback to compressed base64Data!
-        const base64Data = await compressImage(rawBase64, 1000, 0.7);
-        if (target === 'bike') {
-          handleAddDirectImage(base64Data);
-          showFeedback('Saved directly in database as backup!');
-        } else if (target === 'blog') {
-          if (editingBlog) {
-            setEditingBlog({ ...editingBlog, imageUrl: base64Data });
-            showFeedback('Blog backdrop saved directly in database as backup!');
+        try {
+          const base64Data = await compressImage(rawBase64, 1000, 0.7);
+          if (target === 'bike') {
+            await handleAddDirectImage(base64Data);
+            showFeedback('✅ Saved directly in database as backup!');
+          } else if (target === 'blog') {
+            if (editingBlog) {
+              const updatedBlog = { ...editingBlog, imageUrl: base64Data };
+              setEditingBlog(updatedBlog);
+              const isExisting = blogs.some(b => b.id === updatedBlog.id);
+              if (isExisting) {
+                await updateBlog(updatedBlog as BlogPost);
+              }
+              showFeedback('✅ Blog backdrop saved directly in database as backup!');
+            }
+          } else if (target === 'color') {
+            setColorInput({ ...colorInput, imageUrl: base64Data });
+            showFeedback('✅ Custom color saved directly in database as backup!');
+          } else if (target.startsWith('hero-')) {
+            const idx = parseInt(target.split('-')[1], 10);
+            const currentSettings = localSettings || uiSettings;
+            const newImgs = [...(currentSettings?.heroImages || [])];
+            newImgs[idx] = base64Data;
+            const updatedSettings = { ...currentSettings, heroImages: newImgs };
+            setLocalSettings(updatedSettings);
+            await updateUISettings(updatedSettings);
+            showFeedback(`✅ Hero Slide ${idx + 1} saved in database as backup!`);
           }
-        } else if (target === 'color') {
-          setColorInput({ ...colorInput, imageUrl: base64Data });
-          showFeedback('Custom color saved directly in database as backup!');
-        } else if (target.startsWith('hero-')) {
-          const idx = parseInt(target.split('-')[1], 10);
-          const newImgs = [...(localSettings?.heroImages || [])];
-          newImgs[idx] = base64Data;
-          setLocalSettings({ ...localSettings, heroImages: newImgs });
-          showFeedback(`Hero Slide ${idx + 1} saved in database as backup!`);
+        } catch (compErr) {
+          console.error("Critical compression failure:", compErr);
+          showFeedback("❌ Image processing failed.");
         }
+      } finally {
+        setIsUploadingImage(false);
       }
     };
     reader.onerror = () => {
       alert('Error reading files from device.');
+      setIsUploadingImage(false);
     };
     reader.readAsDataURL(file);
   };

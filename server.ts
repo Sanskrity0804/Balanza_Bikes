@@ -543,7 +543,7 @@ https://balanzabikes.com`;
 
 async function startServer() {
   const app = expressApp;
-  // const PORT = 3000;
+  const PORT = 3000;
 
   app.use(express.json({ limit: "50mb" })); // Increase limit to safely support base64 image uploads
 
