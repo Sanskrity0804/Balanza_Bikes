@@ -19,6 +19,8 @@
 // import TermsPage from './components/TermsPage';
 // import ShippingPage from './components/ShippingPage';
 // import ReturnsPage from './components/ReturnsPage';
+// import CheckoutPage from './components/CheckoutPage';
+// import OrderSuccessPage from './components/OrderSuccessPage';
 // import Footer from './components/Footer';
 // import DrawersAndModals from './components/DrawersAndModals';
 // import AccountModal from './components/AccountModal';
@@ -93,6 +95,10 @@
 //         setActivePage('shipping');
 //       } else if (path === '/returns') {
 //         setActivePage('returns');
+//       } else if (path === '/checkout') {
+//         setActivePage('checkout');
+//       } else if (path === '/order-success') {
+//         setActivePage('order-success');
 //       } else if (path === '/' || path === '') {
 //         setActivePage('home');
 //       }
@@ -122,6 +128,8 @@
 //     else if (activePage === 'terms') targetPath = '/terms';
 //     else if (activePage === 'shipping') targetPath = '/shipping';
 //     else if (activePage === 'returns') targetPath = '/returns';
+//     else if (activePage === 'checkout') targetPath = '/checkout';
+//     else if (activePage === 'order-success') targetPath = '/order-success';
 
 //     if (currentPath !== targetPath) {
 //       window.history.pushState({}, '', targetPath);
@@ -386,6 +394,10 @@
 //           <ShippingPage />
 //         ) : activePage === 'returns' ? (
 //           <ReturnsPage />
+//         ) : activePage === 'checkout' ? (
+//           <CheckoutPage />
+//         ) : activePage === 'order-success' ? (
+//           <OrderSuccessPage />
 //         ) : (
 //           <BlogsPage />
 //         )}
@@ -440,6 +452,7 @@ import InfoModal from './components/InfoModal';
 import AdminLogin from './components/AdminLogin';
 import SEO from './components/SEO';
 import { AppProvider, useApp } from './context/AppContext';
+import { safeLocalStorage } from './utils/storage';
 import React, { useState, useEffect } from 'react';
 
 function MainLayout() {
@@ -480,9 +493,9 @@ function MainLayout() {
       }
 
       // Automatically clear the admin session for safety when navigating away from the admin area
-      localStorage.removeItem('balanza_admin_authorized');
-      localStorage.removeItem('balanza_admin_jwt');
-      localStorage.removeItem('balanza_admin_user');
+      safeLocalStorage.removeItem('balanza_admin_authorized');
+      safeLocalStorage.removeItem('balanza_admin_jwt');
+      safeLocalStorage.removeItem('balanza_admin_user');
       sessionStorage.removeItem('balanza_admin_authorized');
       sessionStorage.removeItem('balanza_admin_jwt');
       sessionStorage.removeItem('balanza_admin_user');
@@ -552,7 +565,7 @@ function MainLayout() {
   }
 
   if (currentUrlPath === '/admin') {
-    const hasToken = localStorage.getItem('balanza_admin_jwt');
+    const hasToken = safeLocalStorage.getItem('balanza_admin_jwt');
     if (!hasToken) {
       setTimeout(() => {
         window.history.replaceState({}, '', '/admin/login');

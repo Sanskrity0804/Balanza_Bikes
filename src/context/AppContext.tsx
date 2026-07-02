@@ -70,6 +70,12 @@
 //       paymentMethod: string; 
 //       transactionId: string; 
 //       detailsSummary: string; 
+//       status?: string;
+//     },
+//     checkoutDetails?: {
+//       customerDetails: any;
+//       shippingAddress: any;
+//       billingAddress: any;
 //     }
 //   ) => Promise<string>;
 //   submitNewsletter: (email: string) => Promise<void>;
@@ -83,8 +89,8 @@
 //   addBlog: (blog: BlogPost) => Promise<void>;
 //   updateBlog: (blog: BlogPost) => Promise<void>;
 //   deleteBlog: (blogId: string) => Promise<void>;
-//   activePage: 'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns';
-//   setActivePage: (page: 'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns') => void;
+//   activePage: 'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns' | 'checkout' | 'order-success';
+//   setActivePage: (page: 'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns' | 'checkout' | 'order-success') => void;
 //   selectedBlogPost: BlogPost | null;
 //   setSelectedBlogPost: (post: BlogPost | null) => void;
 //   uiSettings: UISettings;
@@ -152,7 +158,7 @@
 //   const [isAdminAuthorized, setIsAdminAuthorized] = useState(() => {
 //     return localStorage.getItem('balanza_admin_authorized') === 'true';
 //   });
-//   const [activePage, setActivePage] = useState<'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns'>(() => {
+//   const [activePage, setActivePage] = useState<'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns' | 'checkout' | 'order-success'>(() => {
 //     if (typeof window === 'undefined') return 'home';
 //     const path = window.location.pathname;
 //     if (path === '/blogs' || path === '/blogs/') return 'blogs';
@@ -164,6 +170,8 @@
 //     if (path === '/terms' || path === '/terms/') return 'terms';
 //     if (path === '/shipping' || path === '/shipping/') return 'shipping';
 //     if (path === '/returns' || path === '/returns/') return 'returns';
+//     if (path === '/checkout' || path === '/checkout/') return 'checkout';
+//     if (path === '/order-success' || path === '/order-success/') return 'order-success';
 //     return 'home';
 //   });
 //   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
@@ -820,6 +828,12 @@
 //       paymentMethod: string; 
 //       transactionId: string; 
 //       detailsSummary: string; 
+//       status?: string;
+//     },
+//     checkoutDetails?: {
+//       customerDetails: any;
+//       shippingAddress: any;
+//       billingAddress: any;
 //     }
 //   ): Promise<string> => {
 //     if (!user) {
@@ -849,10 +863,13 @@
 //       itemsSubtotal: Math.round(subtotal),
 //       discountAmount: Math.round(discount),
 //       finalTotal: Math.round(total),
-//       status: paymentDetails ? 'paid' : 'placed',
+//       status: paymentDetails?.status || (paymentDetails ? 'paid' : 'placed'),
 //       paymentMethod: paymentDetails?.paymentMethod || null,
 //       transactionId: paymentDetails?.transactionId || null,
 //       detailsSummary: paymentDetails?.detailsSummary || null,
+//       customerDetails: checkoutDetails?.customerDetails || null,
+//       shippingAddress: checkoutDetails?.shippingAddress || null,
+//       billingAddress: checkoutDetails?.billingAddress || null,
 //       createdAt: { seconds: Math.floor(Date.now() / 1000) }
 //     };
 
@@ -899,10 +916,13 @@
 //             itemsSubtotal: Math.round(subtotal),
 //             discountAmount: Math.round(discount),
 //             finalTotal: Math.round(total),
-//             status: paymentDetails ? 'paid' : 'placed',
+//             status: paymentDetails?.status || (paymentDetails ? 'paid' : 'placed'),
 //             paymentMethod: paymentDetails?.paymentMethod || null,
 //             transactionId: paymentDetails?.transactionId || null,
-//             detailsSummary: paymentDetails?.detailsSummary || null
+//             detailsSummary: paymentDetails?.detailsSummary || null,
+//             customerDetails: checkoutDetails?.customerDetails || null,
+//             shippingAddress: checkoutDetails?.shippingAddress || null,
+//             billingAddress: checkoutDetails?.billingAddress || null
 //           }),
 //         });
 
@@ -1100,7 +1120,6 @@
 // };
 
 
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   onAuthStateChanged, 
@@ -1120,6 +1139,7 @@ import {
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { BikeProduct, CartItem, BikeColor, BlogPost, UISettings } from '../types';
 import { BIKES_DATA, BLOGS_DATA } from '../data';
+import { safeLocalStorage } from '../utils/storage';
 
 interface AppContextType {
   cart: CartItem[];
@@ -1259,7 +1279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [accountTab, setAccountTab] = useState<'profile' | 'orders' | 'wishlist' | 'addresses' | 'settings'>('profile');
   const [isAdminOpen, setAdminOpen] = useState(false);
   const [isAdminAuthorized, setIsAdminAuthorized] = useState(() => {
-    return localStorage.getItem('balanza_admin_authorized') === 'true';
+    return safeLocalStorage.getItem('balanza_admin_authorized') === 'true';
   });
   const [activePage, setActivePage] = useState<'home' | 'blogs' | 'blog-detail' | 'contact' | 'story' | 'assembly' | 'faqs' | 'privacy' | 'terms' | 'shipping' | 'returns' | 'checkout' | 'order-success'>(() => {
     if (typeof window === 'undefined') return 'home';
@@ -1282,14 +1302,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [infoModalTab, setInfoModalTab] = useState<'faqs' | 'shipping' | 'returns' | 'privacy' | 'terms'>('faqs');
 
   const [uiSettings, setUiSettings] = useState<UISettings>(() => {
-    const local = localStorage.getItem('balanza_ui_config');
+    const local = safeLocalStorage.getItem('balanza_ui_config');
     if (local) {
       try { 
         const parsed = JSON.parse(local); 
         if (parsed.announcementText === "built for balance. made for confidence. click to learn why." || !parsed.announcementText) {
           parsed.announcementText = "Built for Balance. Made for Confidence.";
           parsed.announcementMoving = true;
-          localStorage.setItem('balanza_ui_config', JSON.stringify(parsed));
+          safeLocalStorage.setItem('balanza_ui_config', JSON.stringify(parsed));
         }
         return parsed;
       } catch (e) { console.error(e); }
@@ -1306,7 +1326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const fetched = docSnap.data() as UISettings;
             const merged = { ...DEFAULT_UI_SETTINGS, ...fetched };
             setUiSettings(merged);
-            localStorage.setItem('balanza_ui_config', JSON.stringify(merged));
+            safeLocalStorage.setItem('balanza_ui_config', JSON.stringify(merged));
           } catch (e) {
             console.error("[AppContext] Error setting ui_config:", e);
           }
@@ -1322,7 +1342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateUISettings = async (newSettings: UISettings) => {
     setUiSettings(newSettings);
-    localStorage.setItem('balanza_ui_config', JSON.stringify(newSettings));
+    safeLocalStorage.setItem('balanza_ui_config', JSON.stringify(newSettings));
     try {
       const response = await fetch('/api/settings', {
         method: 'POST',
@@ -1347,7 +1367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Dynamic Bikes List State with robust Firestore real-time synchronization and instant offline defaults
   const [bikes, setBikes] = useState<BikeProduct[]>(() => {
-    const cached = localStorage.getItem('balanza_bikes');
+    const cached = safeLocalStorage.getItem('balanza_bikes');
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -1369,7 +1389,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (settingsData && typeof settingsData === 'object') {
             const merged = { ...DEFAULT_UI_SETTINGS, ...settingsData };
             setUiSettings(merged);
-            localStorage.setItem('balanza_ui_config', JSON.stringify(merged));
+            safeLocalStorage.setItem('balanza_ui_config', JSON.stringify(merged));
           }
         }
       } catch (e) {
@@ -1382,7 +1402,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const productsData = await response.json();
           if (Array.isArray(productsData) && productsData.length > 0) {
             setBikes(productsData);
-            localStorage.setItem('balanza_bikes', JSON.stringify(productsData));
+            safeLocalStorage.setItem('balanza_bikes', JSON.stringify(productsData));
           }
         }
       } catch (e) {
@@ -1396,7 +1416,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (Array.isArray(blogsData) && blogsData.length > 0) {
             const updated = mapDefaultBlogImages(blogsData);
             setBlogs(updated);
-            localStorage.setItem('balanza_blogs', JSON.stringify(updated));
+            safeLocalStorage.setItem('balanza_blogs', JSON.stringify(updated));
           }
         }
       } catch (e) {
@@ -1418,7 +1438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         if (bikesList.length > 0) {
           setBikes(bikesList);
-          localStorage.setItem('balanza_bikes', JSON.stringify(bikesList));
+          safeLocalStorage.setItem('balanza_bikes', JSON.stringify(bikesList));
         }
       }, (error) => {
         console.warn("[AppContext] Real-time bikes sync failed, falling back to local cache:", error);
@@ -1430,7 +1450,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const getAdminAuthHeaders = () => {
-    const token = localStorage.getItem('balanza_admin_jwt');
+    const token = safeLocalStorage.getItem('balanza_admin_jwt');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -1440,7 +1460,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addBike = async (bike: BikeProduct) => {
     const updated = [...bikes, bike];
     setBikes(updated);
-    localStorage.setItem('balanza_bikes', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_bikes', JSON.stringify(updated));
 
     try {
       const response = await fetch('/api/products', {
@@ -1468,7 +1488,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateBike = async (updatedBike: BikeProduct) => {
     const updated = bikes.map(b => b.id === updatedBike.id ? updatedBike : b);
     setBikes(updated);
-    localStorage.setItem('balanza_bikes', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_bikes', JSON.stringify(updated));
 
     try {
       const response = await fetch(`/api/products/${updatedBike.id}`, {
@@ -1496,7 +1516,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteBike = async (bikeId: string) => {
     const updated = bikes.filter(b => b.id !== bikeId);
     setBikes(updated);
-    localStorage.setItem('balanza_bikes', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_bikes', JSON.stringify(updated));
 
     try {
       const response = await fetch(`/api/products/${bikeId}`, {
@@ -1522,7 +1542,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Dynamic Blogs List State with robust Firestore real-time synchronization and instant offline defaults
   const [blogs, setBlogs] = useState<BlogPost[]>(() => {
-    const cached = localStorage.getItem('balanza_blogs');
+    const cached = safeLocalStorage.getItem('balanza_blogs');
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -1546,7 +1566,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (blogsList.length > 0) {
           const updated = mapDefaultBlogImages(blogsList);
           setBlogs(updated);
-          localStorage.setItem('balanza_blogs', JSON.stringify(updated));
+          safeLocalStorage.setItem('balanza_blogs', JSON.stringify(updated));
         }
       }, (error) => {
         console.warn("[AppContext] Real-time blogs sync failed, falling back to local cache:", error);
@@ -1560,7 +1580,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addBlog = async (blog: BlogPost) => {
     const updated = [...blogs, blog];
     setBlogs(updated);
-    localStorage.setItem('balanza_blogs', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_blogs', JSON.stringify(updated));
 
     try {
       const response = await fetch('/api/blogs', {
@@ -1588,7 +1608,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateBlog = async (updatedBlog: BlogPost) => {
     const updated = blogs.map(b => b.id === updatedBlog.id ? updatedBlog : b);
     setBlogs(updated);
-    localStorage.setItem('balanza_blogs', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_blogs', JSON.stringify(updated));
 
     try {
       const response = await fetch(`/api/blogs/${updatedBlog.id}`, {
@@ -1616,7 +1636,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteBlog = async (blogId: string) => {
     const updated = blogs.filter(b => b.id !== blogId);
     setBlogs(updated);
-    localStorage.setItem('balanza_blogs', JSON.stringify(updated));
+    safeLocalStorage.setItem('balanza_blogs', JSON.stringify(updated));
 
     try {
       const response = await fetch(`/api/blogs/${blogId}`, {
@@ -1644,7 +1664,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const syncUserCart = async () => {
       if (!user) {
-        const savedGuestCart = localStorage.getItem('balanza_guest_cart');
+        const savedGuestCart = safeLocalStorage.getItem('balanza_guest_cart');
         if (savedGuestCart) {
           try { setCart(JSON.parse(savedGuestCart)); } catch { setCart([]); }
         } else {
@@ -1660,7 +1680,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           dbCartItems = await response.json();
         }
 
-        const currentGuestCart = localStorage.getItem('balanza_guest_cart');
+        const currentGuestCart = safeLocalStorage.getItem('balanza_guest_cart');
         if (currentGuestCart) {
           try {
             const guestItems = JSON.parse(currentGuestCart);
@@ -1681,7 +1701,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               });
 
               dbCartItems = Array.from(combinedMap.values());
-              localStorage.removeItem('balanza_guest_cart');
+              safeLocalStorage.removeItem('balanza_guest_cart');
             }
           } catch (e) {
             console.error("Cart merge error: ", e);
@@ -1691,7 +1711,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCart(dbCartItems);
       } catch (err) {
         console.warn("[Cart Isolation] Failed to load synchronized cart, falling back to local user key: ", err);
-        const userSavedCart = localStorage.getItem(`balanza_cart_${user.uid}`);
+        const userSavedCart = safeLocalStorage.getItem(`balanza_cart_${user.uid}`);
         if (userSavedCart) {
           try { setCart(JSON.parse(userSavedCart)); } catch { setCart([]); }
         } else {
@@ -1706,11 +1726,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Synchronize cart mutations back to the backend and local disk
   useEffect(() => {
     if (!user) {
-      localStorage.setItem('balanza_guest_cart', JSON.stringify(cart));
+      safeLocalStorage.setItem('balanza_guest_cart', JSON.stringify(cart));
       return;
     }
 
-    localStorage.setItem(`balanza_cart_${user.uid}`, JSON.stringify(cart));
+    safeLocalStorage.setItem(`balanza_cart_${user.uid}`, JSON.stringify(cart));
 
     const pushCart = async () => {
       try {
@@ -1732,7 +1752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const syncWishlist = async () => {
       if (!user) {
-        const savedWish = localStorage.getItem('balanza_wishlist');
+        const savedWish = safeLocalStorage.getItem('balanza_wishlist');
         if (savedWish) {
           try { setWishlist(JSON.parse(savedWish)); } catch { setWishlist([]); }
         } else {
@@ -1742,7 +1762,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (user.isSimulated) {
-        const savedWish = localStorage.getItem(`balanza_wishlist_${user.uid}`);
+        const savedWish = safeLocalStorage.getItem(`balanza_wishlist_${user.uid}`);
         if (savedWish) {
           try { setWishlist(JSON.parse(savedWish)); } catch { setWishlist([]); }
         } else {
@@ -1765,7 +1785,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Merge guest wishlist
-        const currentGuestWish = localStorage.getItem('balanza_wishlist');
+        const currentGuestWish = safeLocalStorage.getItem('balanza_wishlist');
         let guestWishItems: string[] = [];
         if (currentGuestWish) {
           try {
@@ -1781,10 +1801,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await setDoc(userDocRef, { wishlist: mergedWishlist }, { merge: true });
         
         // Clear guest wishlist
-        localStorage.removeItem('balanza_wishlist');
+        safeLocalStorage.removeItem('balanza_wishlist');
       } catch (err) {
         console.warn("[Wishlist Isolation] Cloud loading failed, falling back onto local user storage:", err);
-        const savedWish = localStorage.getItem(`balanza_wishlist_${user.uid}`);
+        const savedWish = safeLocalStorage.getItem(`balanza_wishlist_${user.uid}`);
         if (savedWish) {
           try { setWishlist(JSON.parse(savedWish)); } catch { setWishlist([]); }
         }
@@ -1799,8 +1819,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthLoading(true);
 
     // Initial check to seed the user state from localStorage cache if present before firebase responds
-    const savedBackendUser = localStorage.getItem('balanza_user');
-    const savedSimulatedUser = localStorage.getItem('balanza_simulated_user');
+    const savedBackendUser = safeLocalStorage.getItem('balanza_user');
+    const savedSimulatedUser = safeLocalStorage.getItem('balanza_simulated_user');
     if (savedBackendUser) {
       try {
         setUser(JSON.parse(savedBackendUser));
@@ -1821,8 +1841,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUser(currUser);
       } else {
         // Only clear the user if there are no legacy active simulated or server sessions
-        const activeSimulated = localStorage.getItem('balanza_simulated_user');
-        const activeBackend = localStorage.getItem('balanza_user');
+        const activeSimulated = safeLocalStorage.getItem('balanza_simulated_user');
+        const activeBackend = safeLocalStorage.getItem('balanza_user');
         if (!activeSimulated && !activeBackend) {
           setUser(null);
         }
@@ -1842,7 +1862,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (user.isSimulated) {
-      const savedLocalOrders = localStorage.getItem(`balanza_local_orders_${user.uid}`);
+      const savedLocalOrders = safeLocalStorage.getItem(`balanza_local_orders_${user.uid}`);
       if (savedLocalOrders) {
         try {
           setOrders(JSON.parse(savedLocalOrders));
@@ -1901,19 +1921,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isSimulated: true,
       notifyConsent
     };
-    localStorage.setItem('balanza_simulated_user', JSON.stringify(simulatedUser));
+    safeLocalStorage.setItem('balanza_simulated_user', JSON.stringify(simulatedUser));
     setUser(simulatedUser);
   };
 
   const signInNodeUser = (userPayload: any) => {
-    localStorage.setItem('balanza_user', JSON.stringify(userPayload));
+    safeLocalStorage.setItem('balanza_user', JSON.stringify(userPayload));
     setUser(userPayload);
   };
 
   const logOut = async () => {
     try {
-      localStorage.removeItem('balanza_simulated_user');
-      localStorage.removeItem('balanza_user');
+      safeLocalStorage.removeItem('balanza_simulated_user');
+      safeLocalStorage.removeItem('balanza_user');
       setUser(null);
       await signOut(auth);
     } catch (error) {
@@ -1977,13 +1997,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     if (user.isSimulated) {
-      const savedLocalOrders = localStorage.getItem(`balanza_local_orders_${user.uid}`);
+      const savedLocalOrders = safeLocalStorage.getItem(`balanza_local_orders_${user.uid}`);
       let localList = [];
       if (savedLocalOrders) {
         try { localList = JSON.parse(savedLocalOrders); } catch (e) {}
       }
       localList.unshift(newOrderObj);
-      localStorage.setItem(`balanza_local_orders_${user.uid}`, JSON.stringify(localList));
+      safeLocalStorage.setItem(`balanza_local_orders_${user.uid}`, JSON.stringify(localList));
       setOrders(prev => [newOrderObj, ...prev]);
       return orderId;
     }
@@ -2046,13 +2066,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return confirmedOrderId;
       } catch (error) {
         console.warn("Unable to save order to Node Backend. Saving to local storage profile:", error);
-        const savedLocalOrders = localStorage.getItem(`balanza_local_orders_${user.uid}`);
+        const savedLocalOrders = safeLocalStorage.getItem(`balanza_local_orders_${user.uid}`);
         let localList = [];
         if (savedLocalOrders) {
           try { localList = JSON.parse(savedLocalOrders); } catch (e) {}
         }
         localList.unshift(newOrderObj);
-        localStorage.setItem(`balanza_local_orders_${user.uid}`, JSON.stringify(localList));
+        safeLocalStorage.setItem(`balanza_local_orders_${user.uid}`, JSON.stringify(localList));
         setOrders(prev => [newOrderObj, ...prev]);
         return orderId;
       }
@@ -2132,16 +2152,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!user) {
-      localStorage.setItem('balanza_wishlist', JSON.stringify(nextWishlist));
+      safeLocalStorage.setItem('balanza_wishlist', JSON.stringify(nextWishlist));
       return;
     }
 
     if (user.isSimulated) {
-      localStorage.setItem(`balanza_wishlist_${user.uid}`, JSON.stringify(nextWishlist));
+      safeLocalStorage.setItem(`balanza_wishlist_${user.uid}`, JSON.stringify(nextWishlist));
       return;
     }
 
-    localStorage.setItem(`balanza_wishlist_${user.uid}`, JSON.stringify(nextWishlist));
+    safeLocalStorage.setItem(`balanza_wishlist_${user.uid}`, JSON.stringify(nextWishlist));
 
     try {
       const { doc, setDoc } = await import('firebase/firestore');

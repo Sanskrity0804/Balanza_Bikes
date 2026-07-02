@@ -2602,15 +2602,17 @@
 //   );
 // }
 
+
 import React, { useState, useEffect } from 'react';
 import { 
   X, Plus, Edit2, Trash2, Calendar, ShoppingBag, 
   DollarSign, BarChart2, ShieldAlert, Check, RefreshCw, 
   ChevronRight, Save, Layout, FileText, Activity, CheckCircle,
-  Upload, Volume2, Edit3, Grid, Video, Sparkles, Image, Mail
+  Upload, Volume2, Edit3, Grid, Video, Sparkles, Image as ImageIcon, Mail
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BikeProduct, BikeColor, BlogPost } from '../types';
+import { safeLocalStorage } from '../utils/storage';
 
 export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { 
@@ -2700,14 +2702,14 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         });
         if (loginRes.ok) {
           const loginData = await loginRes.json();
-          localStorage.setItem("balanza_admin_jwt", loginData.token);
-          localStorage.setItem("balanza_admin_user", JSON.stringify(loginData.user));
+          safeLocalStorage.setItem("balanza_admin_jwt", loginData.token);
+          safeLocalStorage.setItem("balanza_admin_user", JSON.stringify(loginData.user));
         }
       } catch (err) {
         console.error("Failed to automatically acquire admin JWT token during passcode authorization", err);
       }
       setIsAdminAuthorized(true);
-      localStorage.setItem('balanza_admin_authorized', 'true');
+      safeLocalStorage.setItem('balanza_admin_authorized', 'true');
       setLoginError('');
       showFeedback('Access granted. Welcome to Admin Portal!');
     } else {
@@ -2717,9 +2719,9 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
 
   const handleLogout = () => {
     setIsAdminAuthorized(false);
-    localStorage.removeItem('balanza_admin_authorized');
-    localStorage.removeItem('balanza_admin_jwt');
-    localStorage.removeItem('balanza_admin_user');
+    safeLocalStorage.removeItem('balanza_admin_authorized');
+    safeLocalStorage.removeItem('balanza_admin_jwt');
+    safeLocalStorage.removeItem('balanza_admin_user');
     setPasscode('');
     if (window.location.pathname === '/admin') {
       window.history.replaceState({}, '', '/admin/login');
@@ -2735,10 +2737,10 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
   const fetchSubscribers = async () => {
     setIsLoadingSubscribers(true);
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       if (!adminToken) {
         setIsAdminAuthorized(false);
-        localStorage.removeItem('balanza_admin_authorized');
+        safeLocalStorage.removeItem('balanza_admin_authorized');
         setIsLoadingSubscribers(false);
         return;
       }
@@ -2750,8 +2752,8 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           setIsAdminAuthorized(false);
-          localStorage.removeItem('balanza_admin_authorized');
-          localStorage.removeItem('balanza_admin_jwt');
+          safeLocalStorage.removeItem('balanza_admin_authorized');
+          safeLocalStorage.removeItem('balanza_admin_jwt');
           return;
         }
         throw new Error(`Load error: ${res.statusText || 'Status ' + res.status}`);
@@ -2770,7 +2772,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       return;
     }
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       const res = await fetch(`/api/admin/subscribers/${encodeURIComponent(email.trim().toLowerCase())}`, {
         method: "DELETE",
         headers: {
@@ -2791,7 +2793,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
   const fetchVideos = async () => {
     setIsLoadingVideos(true);
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       if (!adminToken) return;
       const res = await fetch("/api/admin/videos", {
         headers: {
@@ -2814,7 +2816,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       return;
     }
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       const res = await fetch(`/api/admin/videos/${id}`, {
         method: "DELETE",
         headers: {
@@ -2861,7 +2863,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
     };
     reader.onload = () => {
       const base64String = reader.result as string;
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
 
       const xhr = new XMLHttpRequest();
       const url = replaceId ? `/api/admin/videos/${replaceId}` : "/api/admin/videos";
@@ -2929,7 +2931,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
 
     setIsUpdatingCredentials(true);
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       const res = await fetch("/api/admin/change-credentials", {
         method: "POST",
         headers: {
@@ -2951,7 +2953,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         
         // Update local storage representation if they changed email
         if (newAdminEmail) {
-          localStorage.setItem("balanza_admin_user", JSON.stringify(data.user));
+          safeLocalStorage.setItem("balanza_admin_user", JSON.stringify(data.user));
         }
       } else {
         alert(data.error || "Failed to update admin credentials.");
@@ -2967,7 +2969,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
   const fetchAdminOrders = async () => {
     setIsLoadingOrders(true);
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       if (!adminToken) return;
       const res = await fetch("/api/admin/orders", {
         headers: {
@@ -2993,7 +2995,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
   const fetchInquiries = async () => {
     setIsLoadingInquiries(true);
     try {
-      const adminToken = localStorage.getItem("balanza_admin_jwt");
+      const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
       if (!adminToken) return;
       const res = await fetch("/api/admin/inquiries", {
         headers: {
@@ -3017,7 +3019,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
   };
 
   useEffect(() => {
-    const adminToken = localStorage.getItem("balanza_admin_jwt");
+    const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
     if (isAdminAuthorized && adminToken) {
       if (activeTab === 'subscribers') {
         fetchSubscribers();
@@ -3030,7 +3032,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       }
     } else if (isAdminAuthorized && !adminToken) {
       setIsAdminAuthorized(false);
-      localStorage.removeItem('balanza_admin_authorized');
+      safeLocalStorage.removeItem('balanza_admin_authorized');
     }
   }, [isAdminAuthorized, activeTab]);
 
@@ -3182,7 +3184,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
 
   const compressImage = (base64Str: string, maxWidth = 1000, quality = 0.7): Promise<string> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -3288,7 +3290,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         }
 
         // Otherwise try folder upload
-        const adminToken = localStorage.getItem("balanza_admin_jwt");
+        const adminToken = safeLocalStorage.getItem("balanza_admin_jwt");
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           headers: {
@@ -3299,7 +3301,8 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
         });
 
         if (!uploadRes.ok) {
-          throw new Error("Server folder upload rejected");
+          const errMsg = await uploadRes.text();
+          throw new Error(`Server folder upload rejected: ${uploadRes.status} ${uploadRes.statusText} - ${errMsg}`);
         }
 
         const uploadData = await uploadRes.json();
@@ -3335,8 +3338,8 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
           await updateUISettings(updatedSettings);
           showFeedback(`✅ Hero Slide ${idx + 1} image uploaded and published live!`);
         }
-      } catch (err) {
-        console.warn("Server uploads bypassed. Rendering raw base64 locally: ", err);
+      } catch (err: any) {
+        console.error("Image upload/saving failed:", err);
         // Fallback to compressed base64Data!
         try {
           const base64Data = await compressImage(rawBase64, 1000, 0.7);
@@ -3366,9 +3369,10 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
             await updateUISettings(updatedSettings);
             showFeedback(`✅ Hero Slide ${idx + 1} saved in database as backup!`);
           }
-        } catch (compErr) {
-          console.error("Critical compression failure:", compErr);
-          showFeedback("❌ Image processing failed.");
+        } catch (compErr: any) {
+          console.error("Critical compression or backup save failure:", compErr);
+          const reason = compErr?.message || compErr?.toString() || err?.message || err?.toString() || "Unknown error";
+          showFeedback(`❌ Image processing failed: ${reason}`);
         }
       } finally {
         setIsUploadingImage(false);
@@ -4680,7 +4684,7 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
                     {/* Hero Section Background Carousel Images Section */}
                     <div className="p-5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-4">
                       <div className="flex items-center gap-2 pb-1 border-b border-slate-150">
-                        <Image className="h-4.5 w-4.5 text-[#8D9E7D]" />
+                        <ImageIcon className="h-4.5 w-4.5 text-[#8D9E7D]" />
                         <h4 className="font-display text-xs font-bold text-slate-800 uppercase tracking-widest">
                           Hero Slide Images (3 images recommended)
                         </h4>
@@ -5277,3 +5281,5 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
     </div>
   );
 }
+
+
